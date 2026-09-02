@@ -1,0 +1,2 @@
+Directorio de versiones gestionado por Alembic/Flask-Migrate.
+La migracion SQL historica permanece en migrations/odiseopay.sql.
