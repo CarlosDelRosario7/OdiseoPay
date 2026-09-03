@@ -10,18 +10,30 @@ export default function ProductsPage() {
   const token = useAuthStore((state) => state.token)
   const role = useAuthStore((state) => state.user?.rol)
   const [products, setProducts] = useState<ProductSummary[]>([])
+  const [stockByProduct, setStockByProduct] = useState<Record<number, number>>({})
   const [form, setForm] = useState(emptyProduct)
   const [editingId, setEditingId] = useState<number | null>(null)
   const [error, setError] = useState('')
 
   const load = async () => {
     if (!token) return
-    try { setProducts((await api.getProducts(token, 1, 100)).items); setError('') }
+    try {
+      const [productResponse, inventoryResponse] = await Promise.all([
+        api.getProducts(token, 1, 100),
+        api.getInventory(token),
+      ])
+      setProducts(productResponse.items)
+      setStockByProduct(Object.fromEntries(inventoryResponse.items.map((item) => [item.id_producto, item.cantidad])))
+      setError('')
+    }
     catch (err) { setError(err instanceof Error ? err.message : 'No se pudieron cargar los productos.') }
   }
   useEffect(() => {
     if (!token) return
-    void api.getProducts(token, 1, 100).then((response) => setProducts(response.items)).catch((err) => setError(err instanceof Error ? err.message : 'No se pudieron cargar los productos.'))
+    void Promise.all([api.getProducts(token, 1, 100), api.getInventory(token)]).then(([productResponse, inventoryResponse]) => {
+      setProducts(productResponse.items)
+      setStockByProduct(Object.fromEntries(inventoryResponse.items.map((item) => [item.id_producto, item.cantidad])))
+    }).catch((err) => setError(err instanceof Error ? err.message : 'No se pudieron cargar los productos.'))
   }, [token])
   const submit = async (event: React.FormEvent) => {
     event.preventDefault(); if (!token) return
@@ -84,6 +96,7 @@ export default function ProductsPage() {
                 <td>{product.nombre}</td>
                 <td>{product.id_categoria}</td>
                 <td>{formatCurrency(Number(product.precio_venta))}</td>
+                <td>{stockByProduct[product.id_producto] ?? 0}</td>
                 <td>
                   {role === 'Admin' && <><button type="button" className="mini-button" onClick={() => { setEditingId(product.id_producto); setForm({ nombre: product.nombre, descripcion: product.descripcion ?? '', precio_compra: String(product.precio_compra ?? ''), precio_venta: String(product.precio_venta), id_categoria: String(product.id_categoria ?? ''), id_proveedor: String(product.id_proveedor ?? '') }) }}>Editar</button>
                   <button type="button" className="mini-button danger" onClick={() => void remove(product.id_producto)}>Eliminar</button></>}
