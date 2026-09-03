@@ -1,8 +1,9 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 
 import { useAuthStore } from '../../../shared/store/authStore'
 import { api } from '../../../shared/lib/api'
 import { formatCurrency } from '../../../shared/utils/validation'
+import type { ClientSummary, ProductSummary } from '../../../shared/lib/api'
 
 type SaleItem = {
   id_producto: number
@@ -13,10 +14,11 @@ type SaleItem = {
 
 export default function SalesPage() {
   const token = useAuthStore((state) => state.token)
-  const [items, setItems] = useState<SaleItem[]>([
-    { id_producto: 1, nombre: 'Agua 600ml', cantidad: 2, precio: 8.5 },
-  ])
-  const [clienteId, setClienteId] = useState('1')
+  const role = useAuthStore((state) => state.user?.rol)
+  const [products, setProducts] = useState<ProductSummary[]>([])
+  const [clients, setClients] = useState<ClientSummary[]>([])
+  const [items, setItems] = useState<SaleItem[]>([])
+  const [clienteId, setClienteId] = useState('')
   const [montoRecibido, setMontoRecibido] = useState('200')
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
@@ -25,6 +27,12 @@ export default function SalesPage() {
   const itbis = subtotal * 0.18
   const total = subtotal + itbis
   const cambio = Number(montoRecibido || 0) - total
+
+  useEffect(() => {
+    if (!token) return
+    void api.getProducts(token, 1, 100).then((response) => setProducts(response.items)).catch((err) => setError(err instanceof Error ? err.message : 'No se pudieron cargar los productos.'))
+    if (role === 'Admin') void api.getClientes(token).then((response) => setClients(response.items)).catch(() => undefined)
+  }, [token, role])
 
   const handleCreateSale = async () => {
     if (!token) return
@@ -59,10 +67,7 @@ export default function SalesPage() {
 
       <section className="sale-layout">
         <div className="sale-panel">
-          <label>
-            ID del cliente
-            <input value={clienteId} onChange={(e) => setClienteId(e.target.value)} />
-          </label>
+          <label>Cliente{role === 'Admin' ? <select required value={clienteId} onChange={(e) => setClienteId(e.target.value)}><option value="">Selecciona un cliente</option>{clients.map((client) => <option key={client.id_cliente} value={client.id_cliente}>{client.nombre} {client.apellido}</option>)}</select> : <input required type="number" min="1" placeholder="ID del cliente" value={clienteId} onChange={(e) => setClienteId(e.target.value)} />}</label>
 
           <div className="sale-items">
             {items.map((item, index) => (
@@ -102,9 +107,7 @@ export default function SalesPage() {
             ))}
           </div>
 
-          <button type="button" className="secondary-button" onClick={() => setItems((prev) => [...prev, { id_producto: Date.now(), nombre: 'Producto', cantidad: 1, precio: 0 }])}>
-            Agregar producto
-          </button>
+          <label>Producto<select value="" onChange={(e) => { const product = products.find((entry) => entry.id_producto === Number(e.target.value)); if (product) setItems((prev) => [...prev, { id_producto: product.id_producto, nombre: product.nombre, cantidad: 1, precio: Number(product.precio_venta) }]) }}><option value="">Agregar producto...</option>{products.map((product) => <option key={product.id_producto} value={product.id_producto}>{product.nombre}</option>)}</select></label>
         </div>
 
         <aside className="summary-panel">
@@ -135,7 +138,7 @@ export default function SalesPage() {
           {error ? <p className="error-message">{error}</p> : null}
           {success ? <p className="success-message">{success}</p> : null}
 
-          <button type="button" onClick={handleCreateSale}>Registrar venta</button>
+          <button type="button" disabled={!items.length || !clienteId || cambio < 0} onClick={handleCreateSale}>Registrar venta</button>
         </aside>
       </section>
     </main>

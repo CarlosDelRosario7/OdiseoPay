@@ -1,4 +1,5 @@
 import { NavLink } from 'react-router-dom'
+import { useAuthStore } from '../store/authStore'
 
 const navItems = [
   { to: '/', label: 'Dashboard' },
@@ -10,6 +11,7 @@ const navItems = [
 ]
 
 export default function Sidebar() {
+  const role = useAuthStore((state) => state.user?.rol)
   return (
     <aside className="sidebar">
       <div className="brand-box">
@@ -21,7 +23,7 @@ export default function Sidebar() {
       </div>
 
       <nav className="nav-menu" aria-label="Main navigation">
-        {navItems.map((item) => (
+        {navItems.filter((item) => item.to !== '/usuarios' || role === 'Admin').map((item) => (
           <NavLink
             key={item.to}
             to={item.to}

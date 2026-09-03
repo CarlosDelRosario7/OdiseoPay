@@ -27,7 +27,7 @@ export default function AppRoutes() {
         <Route path="/productos" element={<ProductsPage />} />
         <Route path="/clientes" element={<CustomersPage />} />
         <Route path="/inventario" element={<InventoryPage />} />
-        <Route path="/usuarios" element={<UsersPage />} />
+        <Route path="/usuarios" element={<ProtectedRoute roles={['Admin']}><UsersPage /></ProtectedRoute>} />
       </Route>
 
       <Route path="*" element={<Navigate to="/" replace />} />
