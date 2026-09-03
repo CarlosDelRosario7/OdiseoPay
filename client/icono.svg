@@ -1,0 +1,57 @@
+<!--?xml version="1.0" encoding="UTF-8"?-->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+    <defs>
+        <linearGradient id="ocean" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stop-color="#0B1F3A"></stop>
+            <stop offset="100%" stop-color="#123F63"></stop>
+        </linearGradient>
+
+        <linearGradient id="gold" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stop-color="#FFD166"></stop>
+            <stop offset="100%" stop-color="#F4A261"></stop>
+        </linearGradient>
+    </defs>
+
+    <!-- Fondo -->
+    <rect width="512" height="512" rx="112" fill="url(#ocean)"></rect>
+
+    <!-- O / Timón de Odiseo -->
+    <circle cx="256" cy="256" r="142" fill="none" stroke="#FFFFFF" stroke-width="34"></circle>
+
+    <!-- Brazos del timón -->
+    <g fill="#FFFFFF" stroke="#FFFFFF" stroke-width="18" stroke-linecap="round">
+        <!-- Cardinales -->
+        <line x1="256" y1="82" x2="256" y2="128"></line>
+        <line x1="256" y1="384" x2="256" y2="430"></line>
+        <line x1="82" y1="256" x2="128" y2="256"></line>
+        <line x1="384" y1="256" x2="430" y2="256"></line>
+
+        <!-- Diagonales -->
+        <line x1="133" y1="133" x2="165" y2="165"></line>
+        <line x1="347" y1="347" x2="379" y2="379"></line>
+        <line x1="379" y1="133" x2="347" y2="165"></line>
+        <line x1="165" y1="347" x2="133" y2="379"></line>
+    </g>
+
+    <!-- Moneda central -->
+    <circle cx="256" cy="256" r="55" fill="url(#gold)" stroke="#FFFFFF" stroke-width="8"></circle>
+
+    <!-- Símbolo $ -->
+    <path d="M274 219
+           C265 213 254 211 244 214
+           C232 217 226 226 228 236
+           C230 247 239 251 254 255
+           L264 258
+           C277 262 284 268 283 279
+           C282 291 271 299 257 300
+           C244 301 233 297 225 290" fill="none" stroke="#0B1F3A" stroke-width="13" stroke-linecap="round" stroke-linejoin="round"></path>
+
+    <!-- Línea vertical del $ -->
+    <line x1="256" y1="205" x2="256" y2="308" stroke="#0B1F3A" stroke-width="11" stroke-linecap="round"></line>
+
+    <!-- Ola -->
+    <path d="M150 407
+           C180 385 210 385 240 407
+           C270 429 300 429 330 407
+           C350 393 369 389 388 395" fill="none" stroke="#39D0C8" stroke-width="12" stroke-linecap="round"></path>
+</svg>
