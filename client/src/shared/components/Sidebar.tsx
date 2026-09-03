@@ -1,15 +1,18 @@
 import { NavLink } from 'react-router-dom'
 import { useAuthStore } from '../store/authStore'
-import { Boxes, ClipboardList, LayoutDashboard, LogOut, Package, ShoppingCart, Truck, Users, X } from 'lucide-react'
+import { Boxes, ClipboardList, FolderTree, LayoutDashboard, LogOut, Package, ShoppingCart, Truck, Users, X } from 'lucide-react'
 
 const navItems = [
   { to: '/', label: 'Dashboard', icon: LayoutDashboard },
   { to: '/ventas', label: 'Ventas', icon: ShoppingCart },
+  { to: '/ventas/historial', label: 'Historial', icon: ClipboardList },
   { to: '/productos', label: 'Productos', icon: Package },
+  { to: '/categorias', label: 'Categorías', icon: FolderTree },
   { to: '/clientes', label: 'Clientes', icon: Users },
   { to: '/inventario', label: 'Inventario', icon: Boxes },
   { to: '/proveedores', label: 'Proveedores', icon: Truck },
   { to: '/usuarios', label: 'Usuarios', icon: ClipboardList },
+  { to: '/compras', label: 'Compras', icon: ShoppingCart, adminOnly: true },
 ]
 
 type SidebarProps = { onClose: () => void }
@@ -29,7 +32,7 @@ export default function Sidebar({ onClose }: SidebarProps) {
       </div>
 
       <nav className="nav-menu" aria-label="Main navigation">
-        {navItems.filter((item) => item.to !== '/usuarios' || role === 'Admin').map((item) => (
+        {navItems.filter((item) => (!item.adminOnly && item.to !== '/usuarios') || role === 'Admin').map((item) => (
           <NavLink
             key={item.to}
             to={item.to}

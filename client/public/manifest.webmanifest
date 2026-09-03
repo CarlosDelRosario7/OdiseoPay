@@ -1,0 +1,13 @@
+{
+  "name": "OdiseoPay",
+  "short_name": "OdiseoPay",
+  "description": "Sistema de ventas e inventario",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0b1220",
+  "theme_color": "#0b1220",
+  "lang": "es",
+  "icons": [
+    { "src": "/icono.svg", "sizes": "512x512", "type": "image/svg+xml", "purpose": "any maskable" }
+  ]
+}

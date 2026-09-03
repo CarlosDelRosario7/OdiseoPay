@@ -14,7 +14,13 @@ def login():
     user = Usuario.query.filter_by(usuario=data.get("usuario")).first()
     if user is None or not verify_password(user.contrasena, data.get("contrasena", "")):
         return jsonify({"error": "Credenciales inválidas"}), 401
-    return jsonify({"access_token": create_token(user), "usuario": user.usuario, "rol": user.rol})
+    return jsonify({
+        "access_token": create_token(user),
+        "id_usuario": user.id_usuario,
+        "nombre": user.nombre,
+        "usuario": user.usuario,
+        "rol": user.rol,
+    })
 
 
 @auth_blueprint.post("/registro")

@@ -40,8 +40,8 @@ export default function LoginPage() {
       login({
         token: result.access_token,
         user: {
-          id: 0,
-          nombre: result.usuario,
+          id: result.id_usuario,
+          nombre: result.nombre,
           usuario: result.usuario,
           rol: result.rol as 'Admin' | 'Vendedor',
         },

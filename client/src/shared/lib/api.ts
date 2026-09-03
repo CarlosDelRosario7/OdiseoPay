@@ -47,7 +47,7 @@ async function apiRequest<T>(
 
 export const api = {
   login: (data: { usuario: string; contrasena: string }) =>
-    apiRequest<{ access_token: string; usuario: string; rol: string }>(
+    apiRequest<{ access_token: string; id_usuario: number; nombre: string; usuario: string; rol: string }>(
       '/api/auth/login',
       'POST',
       { body: JSON.stringify(data) },
@@ -96,6 +96,16 @@ export const api = {
     apiRequest<ProviderSummary>(`/api/proveedores/${id}`, 'PATCH', { token, body: JSON.stringify(data) }),
   deleteProvider: (token: string, id: number) =>
     apiRequest<void>(`/api/proveedores/${id}`, 'DELETE', { token }),
+  getCategories: (token: string) =>
+    apiRequest<ListResponse<CategorySummary>>('/api/categorias?page=1&per_page=100', 'GET', { token }),
+  createCategory: (token: string, data: CategoryInput) =>
+    apiRequest<CategorySummary>('/api/categorias', 'POST', { token, body: JSON.stringify(data) }),
+  updateCategory: (token: string, id: number, data: Partial<CategoryInput>) =>
+    apiRequest<CategorySummary>(`/api/categorias/${id}`, 'PATCH', { token, body: JSON.stringify(data) }),
+  deleteCategory: (token: string, id: number) =>
+    apiRequest<void>(`/api/categorias/${id}`, 'DELETE', { token }),
+  createPurchase: (token: string, payload: PurchaseInput) =>
+    apiRequest<PurchaseSummary>('/api/compras', 'POST', { token, body: JSON.stringify(payload) }),
   createSale: (token: string, payload: Record<string, unknown>) =>
     apiRequest<Record<string, unknown>>('/api/ventas', 'POST', {
       token,
@@ -142,3 +152,8 @@ export type UserInput = { nombre: string; usuario: string; contrasena?: string; 
 export type SaleSummary = { id_venta: number; fecha?: string; id_cliente: number; id_usuario: number }
 export type ProviderSummary = { id_proveedor: number; nombre: string; telefono?: string; correo?: string; direccion?: string }
 export type ProviderInput = Omit<ProviderSummary, 'id_proveedor'>
+export type CategorySummary = { id_categoria: number; nombre: string; descripcion?: string }
+export type CategoryInput = Omit<CategorySummary, 'id_categoria'>
+export type PurchaseDetailInput = { id_producto: number; cantidad: number; precio: string }
+export type PurchaseInput = { id_proveedor: number; detalles: PurchaseDetailInput[] }
+export type PurchaseSummary = { id_compra: number; fecha?: string; id_proveedor: number; id_usuario: number }
