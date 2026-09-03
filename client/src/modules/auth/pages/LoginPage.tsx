@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom'
 import { api } from '../../../shared/lib/api'
 import { useAuthStore } from '../../../shared/store/authStore'
 import { validatePassword } from '../../../shared/utils/validation'
+import { Eye, EyeOff } from 'lucide-react'
 
 export default function LoginPage() {
   const navigate = useNavigate()
@@ -11,6 +12,7 @@ export default function LoginPage() {
   const [form, setForm] = useState({ usuario: '', contrasena: '' })
   const [error, setError] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [showPassword, setShowPassword] = useState(false)
 
   const handleChange = (field: 'usuario' | 'contrasena', value: string) => {
     setForm((prev) => ({ ...prev, [field]: value }))
@@ -72,12 +74,10 @@ export default function LoginPage() {
 
           <label>
             Contraseña
-            <input
-              type="password"
-              value={form.contrasena}
-              onChange={(event) => handleChange('contrasena', event.target.value)}
-              placeholder="••••••••"
-            />
+            <span className="password-field">
+              <input type={showPassword ? 'text' : 'password'} value={form.contrasena} onChange={(event) => handleChange('contrasena', event.target.value)} placeholder="••••••••" />
+              <button type="button" className="icon-button" aria-label={showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'} onClick={() => setShowPassword((visible) => !visible)}>{showPassword ? <EyeOff size={18} /> : <Eye size={18} />}</button>
+            </span>
           </label>
 
           {error ? <p className="error-message">{error}</p> : null}

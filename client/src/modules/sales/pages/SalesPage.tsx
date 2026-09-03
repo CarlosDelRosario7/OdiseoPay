@@ -4,6 +4,7 @@ import { useAuthStore } from '../../../shared/store/authStore'
 import { api } from '../../../shared/lib/api'
 import { formatCurrency } from '../../../shared/utils/validation'
 import type { ClientSummary, ProductSummary } from '../../../shared/lib/api'
+import { Search, Trash2 } from 'lucide-react'
 
 type SaleItem = {
   id_producto: number
@@ -22,11 +23,13 @@ export default function SalesPage() {
   const [montoRecibido, setMontoRecibido] = useState('200')
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
+  const [productSearch, setProductSearch] = useState('')
 
   const subtotal = items.reduce((sum, item) => sum + item.cantidad * item.precio, 0)
   const itbis = subtotal * 0.18
   const total = subtotal + itbis
   const cambio = Number(montoRecibido || 0) - total
+  const suggestions = products.filter((product) => product.nombre.toLowerCase().includes(productSearch.toLowerCase()) && !items.some((item) => item.id_producto === product.id_producto)).slice(0, 6)
 
   useEffect(() => {
     if (!token) return
@@ -103,11 +106,13 @@ export default function SalesPage() {
                     )
                   }}
                 />
+                <button type="button" className="icon-button remove-item" aria-label={`Quitar ${item.nombre}`} onClick={() => setItems((prev) => prev.filter((_, idx) => idx !== index))}><Trash2 size={18} /></button>
               </div>
             ))}
           </div>
 
-          <label>Producto<select value="" onChange={(e) => { const product = products.find((entry) => entry.id_producto === Number(e.target.value)); if (product) setItems((prev) => [...prev, { id_producto: product.id_producto, nombre: product.nombre, cantidad: 1, precio: Number(product.precio_venta) }]) }}><option value="">Agregar producto...</option>{products.map((product) => <option key={product.id_producto} value={product.id_producto}>{product.nombre}</option>)}</select></label>
+          <label>Buscar producto<span className="search-field"><Search size={18} /><input value={productSearch} onChange={(e) => setProductSearch(e.target.value)} placeholder="Escribe el nombre del producto" /></span></label>
+          {productSearch && <div className="suggestions" role="listbox">{suggestions.map((product) => <button type="button" key={product.id_producto} onClick={() => { setItems((prev) => [...prev, { id_producto: product.id_producto, nombre: product.nombre, cantidad: 1, precio: Number(product.precio_venta) }]); setProductSearch('') }}>{product.nombre}<span>{formatCurrency(Number(product.precio_venta))}</span></button>)}{!suggestions.length && <p>No hay productos coincidentes.</p>}</div>}
         </div>
 
         <aside className="summary-panel">

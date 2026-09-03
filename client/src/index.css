@@ -60,6 +60,11 @@ button, input, select {
   font: inherit;
 }
 
+.password-field { position: relative; display: block; }
+.password-field input { padding-right: 3rem; }
+.icon-button { border: 0; background: transparent; padding: 0.45rem; }
+.password-field .icon-button { position: absolute; right: 0.35rem; top: 50%; transform: translateY(-50%); }
+
 button {
   cursor: pointer;
 }
@@ -241,9 +246,22 @@ img {
 
 .sale-item-row {
   display: grid;
-  grid-template-columns: 1.4fr 0.7fr 0.9fr;
+  grid-template-columns: 1.4fr 0.7fr 0.9fr auto;
   gap: 0.65rem;
+  align-items: center;
 }
+
+.sale-item-row input {
+  min-width: 0;
+}
+
+.search-field { position: relative; display: flex; align-items: center; }
+.search-field svg { position: absolute; left: 0.8rem; color: var(--muted); }
+.search-field input { padding-left: 2.5rem; }
+.suggestions { border: 1px solid var(--border); border-radius: 10px; overflow: hidden; }
+.suggestions button { width: 100%; display: flex; justify-content: space-between; border: 0; border-bottom: 1px solid var(--border); border-radius: 0; text-align: left; }
+.suggestions p { padding: 0.8rem; color: var(--muted); margin: 0; }
+.remove-item { padding: 0.45rem; color: var(--danger); }
 
 .summary-row {
   display: flex;
@@ -271,6 +289,8 @@ img {
   display: flex;
   flex-direction: column;
   gap: 1.5rem;
+  position: relative;
+  z-index: 10;
 }
 
 .brand-box {
@@ -278,6 +298,19 @@ img {
   align-items: center;
   gap: 0.8rem;
   padding: 0.5rem 0.35rem;
+}
+
+.sidebar-close,
+.menu-button { display: none; }
+
+.sidebar-logout {
+  margin-top: auto;
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  color: var(--danger);
+  background: transparent;
+  border-color: rgba(248, 113, 113, 0.35);
 }
 
 .brand-box img {
@@ -307,6 +340,9 @@ img {
   border-radius: 12px;
   transition: 0.2s ease;
   font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
 }
 
 .nav-item:hover,
@@ -365,6 +401,8 @@ button {
   padding: 0.7rem 0.9rem;
   font-weight: 600;
 }
+
+.ghost-button { display: inline-flex; align-items: center; gap: 0.45rem; }
 
 .content-panel {
   padding: 1.5rem;
@@ -447,13 +485,35 @@ th {
 
 @media (max-width: 900px) {
   .app-shell {
-    flex-direction: column;
+    display: block;
   }
 
   .sidebar {
-    width: 100%;
-    border-right: 0;
-    border-bottom: 1px solid var(--border);
+    position: fixed;
+    inset: 0 auto 0 0;
+    width: min(280px, 85vw);
+    transform: translateX(-105%);
+    transition: transform 0.25s ease;
+    box-shadow: var(--shadow);
+  }
+
+  .sidebar-open .sidebar {
+    transform: translateX(0);
+  }
+
+  .sidebar-close,
+  .menu-button {
+    display: inline-flex;
+  }
+
+  .menu-button {
+    margin-right: 0.5rem;
+  }
+
+  .topbar > div:first-child {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
   }
 
   .nav-menu {
@@ -480,7 +540,7 @@ th {
   }
 
   .sale-item-row {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr) 5rem 6rem auto;
   }
 
   .page-shell {

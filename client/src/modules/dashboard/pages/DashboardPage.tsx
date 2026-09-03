@@ -19,7 +19,7 @@ export default function DashboardPage() {
       <header className="page-header">
         <div>
           <p className="eyebrow">Panel principal</p>
-          <h1>Bienvenido, {user?.nombre ?? 'Usuario'}</h1>
+          <h1>Bienvenido {user?.nombre ?? 'Usuario'} ({user?.rol ?? 'rol'})</h1>
         </div>
       </header>
       {error && <p className="error-message">{error}</p>}

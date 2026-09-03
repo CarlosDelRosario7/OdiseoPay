@@ -7,6 +7,7 @@ import InventoryPage from '../modules/inventory/pages/InventoryPage'
 import ProductsPage from '../modules/products/pages/ProductsPage'
 import SalesPage from '../modules/sales/pages/SalesPage'
 import UsersPage from '../modules/users/pages/UsersPage'
+import ProvidersPage from '../modules/providers/pages/ProvidersPage'
 import AppShell from '../shared/components/AppShell'
 import ProtectedRoute from '../shared/components/ProtectedRoute'
 
@@ -28,6 +29,7 @@ export default function AppRoutes() {
         <Route path="/clientes" element={<CustomersPage />} />
         <Route path="/inventario" element={<InventoryPage />} />
         <Route path="/usuarios" element={<ProtectedRoute roles={['Admin']}><UsersPage /></ProtectedRoute>} />
+        <Route path="/proveedores" element={<ProtectedRoute roles={['Admin']}><ProvidersPage /></ProtectedRoute>} />
       </Route>
 
       <Route path="*" element={<Navigate to="/" replace />} />

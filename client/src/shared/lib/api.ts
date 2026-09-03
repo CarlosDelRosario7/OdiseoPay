@@ -88,6 +88,14 @@ export const api = {
     apiRequest<UserSummary>(`/api/usuarios/${id}`, 'PATCH', { token, body: JSON.stringify(data) }),
   deleteUser: (token: string, id: number) =>
     apiRequest<void>(`/api/usuarios/${id}`, 'DELETE', { token }),
+  getProviders: (token: string) =>
+    apiRequest<ListResponse<ProviderSummary>>('/api/proveedores?page=1&per_page=100', 'GET', { token }),
+  createProvider: (token: string, data: ProviderInput) =>
+    apiRequest<ProviderSummary>('/api/proveedores', 'POST', { token, body: JSON.stringify(data) }),
+  updateProvider: (token: string, id: number, data: Partial<ProviderInput>) =>
+    apiRequest<ProviderSummary>(`/api/proveedores/${id}`, 'PATCH', { token, body: JSON.stringify(data) }),
+  deleteProvider: (token: string, id: number) =>
+    apiRequest<void>(`/api/proveedores/${id}`, 'DELETE', { token }),
   createSale: (token: string, payload: Record<string, unknown>) =>
     apiRequest<Record<string, unknown>>('/api/ventas', 'POST', {
       token,
@@ -132,3 +140,5 @@ export type ClientInput = Omit<ClientSummary, 'id_cliente'> & { direccion?: stri
 export type UserSummary = { id_usuario: number; nombre: string; usuario: string; rol: string }
 export type UserInput = { nombre: string; usuario: string; contrasena?: string; rol: 'Admin' | 'Vendedor' }
 export type SaleSummary = { id_venta: number; fecha?: string; id_cliente: number; id_usuario: number }
+export type ProviderSummary = { id_proveedor: number; nombre: string; telefono?: string; correo?: string; direccion?: string }
+export type ProviderInput = Omit<ProviderSummary, 'id_proveedor'>
