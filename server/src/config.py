@@ -15,6 +15,9 @@ class Config:
     JWT_SECRET_KEY = os.getenv("JWT_SECRET_KEY", "dev-only-change-me")
     FRONTEND_ORIGINS = [
         origin.strip()
-        for origin in os.getenv("FRONTEND_ORIGINS", "http://localhost:3000").split(",")
+        for origin in os.getenv(
+            "FRONTEND_ORIGINS",
+            "http://localhost:3000,http://localhost:5173",
+        ).split(",")
         if origin.strip()
     ]
