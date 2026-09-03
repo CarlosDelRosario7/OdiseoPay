@@ -4,7 +4,8 @@ import { useNavigate } from 'react-router-dom'
 import { api } from '../../../shared/lib/api'
 import { useAuthStore } from '../../../shared/store/authStore'
 import { validatePassword } from '../../../shared/utils/validation'
-import { Eye, EyeOff } from 'lucide-react'
+import { Eye, EyeOff, Moon, Sun } from 'lucide-react'
+import { useThemeStore } from '../../../shared/store/themeStore'
 
 export default function LoginPage() {
   const navigate = useNavigate()
@@ -13,6 +14,8 @@ export default function LoginPage() {
   const [error, setError] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
+  const theme = useThemeStore((state) => state.theme)
+  const toggleTheme = useThemeStore((state) => state.toggleTheme)
 
   const handleChange = (field: 'usuario' | 'contrasena', value: string) => {
     setForm((prev) => ({ ...prev, [field]: value }))
@@ -55,6 +58,9 @@ export default function LoginPage() {
   return (
     <main className="auth-shell">
       <section className="auth-card">
+        <button type="button" className="theme-toggle icon-button" aria-label={theme === 'dark' ? 'Cambiar a modo claro' : 'Cambiar a modo oscuro'} onClick={toggleTheme}>
+          {theme === 'dark' ? <Sun size={19} /> : <Moon size={19} />}
+        </button>
         <div className="brand-block">
           <img src="/icono.svg" alt="OdiseoPay" className="brand-icon" />
           <h1>OdiseoPay</h1>
@@ -83,7 +89,7 @@ export default function LoginPage() {
           {error ? <p className="error-message">{error}</p> : null}
 
           <button type="submit" disabled={isSubmitting}>
-            {isSubmitting ? 'Ingresando...' : 'Iniciar sesión'}
+            {isSubmitting ? <><img src="/icono.svg" alt="" className="button-loader" />Ingresando...</> : 'Iniciar sesión'}
           </button>
         </form>
       </section>
