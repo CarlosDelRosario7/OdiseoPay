@@ -51,6 +51,7 @@ html, body, #root {
   background: var(--bg);
   color: var(--text);
   overflow-x: hidden;
+  overflow-y: hidden;
 }
 
 body {
@@ -373,7 +374,8 @@ img {
 
 .app-shell {
   display: flex;
-  min-height: 100vh;
+  height: 100vh;
+  min-height: 0;
   background: var(--bg);
 }
 
@@ -457,6 +459,12 @@ img {
   display: flex;
   flex-direction: column;
   min-width: 0;
+  min-height: 0;
+  height: 100vh;
+  overflow-y: auto;
+  overflow-x: hidden;
+  scrollbar-color: var(--primary) transparent;
+  scrollbar-width: thin;
 }
 
 .topbar {
@@ -589,6 +597,7 @@ th {
 @media (max-width: 900px) {
   .app-shell {
     display: block;
+    height: 100vh;
   }
 
   .sidebar {
