@@ -4,12 +4,13 @@ Backend REST para OdiseoPay construido con Flask, Flask-SQLAlchemy, MariaDB/MySQ
 
 ## Inicio rápido
 
-Desde la raíz del proyecto:
+Desde la raíz del proyecto (en el caso de ejecutar en linux o WSL), ejecuta:
 
 ```bash
-source venv/bin/activate
-python3 src/main.py
+./server/iniciar_servidor.sh
 ```
+
+El script crea `.venv` si no existe, instala las dependencias y arranca la API.
 
 La API queda disponible en `http://127.0.0.1:5000`. También puede iniciarse con `flask --app src.main run --debug`.
 
