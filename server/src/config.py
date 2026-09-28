@@ -13,6 +13,11 @@ class Config:
     )
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     JWT_SECRET_KEY = os.getenv("JWT_SECRET_KEY", "dev-only-change-me")
+
+    AUTH0_DOMAIN = os.getenv("AUTH0_DOMAIN", "")
+    AUTH0_AUDIENCE = os.getenv("AUTH0_AUDIENCE", "")
+    AUTH0_ALGORITHMS = ["RS256"]
+    
     FRONTEND_ORIGINS = [
         origin.strip()
         for origin in os.getenv(
