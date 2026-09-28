@@ -1,8 +1,11 @@
 import os
 
+from pathlib import Path
+
 from dotenv import load_dotenv
 
-load_dotenv()
+BASE_DIR = Path(__file__).resolve().parent.parent
+load_dotenv(BASE_DIR / ".env")
 
 
 class Config:
@@ -17,7 +20,7 @@ class Config:
     AUTH0_DOMAIN = os.getenv("AUTH0_DOMAIN", "")
     AUTH0_AUDIENCE = os.getenv("AUTH0_AUDIENCE", "")
     AUTH0_ALGORITHMS = ["RS256"]
-    
+
     FRONTEND_ORIGINS = [
         origin.strip()
         for origin in os.getenv(
