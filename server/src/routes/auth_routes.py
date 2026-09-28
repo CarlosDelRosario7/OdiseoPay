@@ -1,9 +1,11 @@
 from flask import Blueprint, jsonify, request
+import jwt
 
 from ..models import Usuario
 from ..extensions import db
 from ..services.usuario_service import create_user
 from ..utils.auth_utils import create_token, verify_password
+from ..utils.auth0_utils import validate_auth0_token
 
 auth_blueprint = Blueprint("auth", __name__, url_prefix="/api/auth")
 
@@ -34,3 +36,32 @@ def register():
     if has_users:
         return jsonify({"error": "Solo un administrador puede registrar usuarios"}), 401
     return jsonify({"id_usuario": create_user(data).id_usuario}), 201
+
+@auth_blueprint.get("/auth0/test")
+def auth0_test():
+    authorization = request.headers.get("Authorization", "")
+
+    if not authorization.startswith("Bearer "):
+        return jsonify({"error": "Bearer token requerido"}), 401
+
+    token = authorization.removeprefix("Bearer ").strip()
+
+    if not token:
+        return jsonify({"error": "Bearer token requerido"}), 401
+
+    try:
+        payload = validate_auth0_token(token)
+
+        return jsonify({
+            "message": "Token de Auth0 válido",
+            "sub": payload.get("sub"),
+            "aud": payload.get("aud"),
+            "iss": payload.get("iss"),
+        }), 200
+
+    except jwt.ExpiredSignatureError:
+        return jsonify({"error": "El token de Auth0 expiró"}), 401
+    except jwt.InvalidTokenError:
+        return jsonify({"error": "Token de Auth0 inválido"}), 401
+    except Exception:
+        return jsonify({"error": "No se pudo validar el token de Auth0"}), 500
