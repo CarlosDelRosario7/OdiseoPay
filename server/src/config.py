@@ -20,6 +20,8 @@ class Config:
     AUTH0_DOMAIN = os.getenv("AUTH0_DOMAIN", "")
     AUTH0_AUDIENCE = os.getenv("AUTH0_AUDIENCE", "")
     AUTH0_ALGORITHMS = ["RS256"]
+    GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "")
+    GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-3.8-flash")
 
     FRONTEND_ORIGINS = [
         origin.strip()
