@@ -1,8 +1,11 @@
 import os
 
+from pathlib import Path
+
 from dotenv import load_dotenv
 
-load_dotenv()
+BASE_DIR = Path(__file__).resolve().parent.parent
+load_dotenv(BASE_DIR / ".env")
 
 
 class Config:
@@ -13,6 +16,13 @@ class Config:
     )
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     JWT_SECRET_KEY = os.getenv("JWT_SECRET_KEY", "dev-only-change-me")
+
+    AUTH0_DOMAIN = os.getenv("AUTH0_DOMAIN", "")
+    AUTH0_AUDIENCE = os.getenv("AUTH0_AUDIENCE", "")
+    AUTH0_ALGORITHMS = ["RS256"]
+    GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "")
+    GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-3.8-flash")
+
     FRONTEND_ORIGINS = [
         origin.strip()
         for origin in os.getenv(
