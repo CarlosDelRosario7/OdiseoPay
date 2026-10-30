@@ -46,6 +46,18 @@ async function apiRequest<T>(
 }
 
 export const api = {
+    auth0Login: (auth0Token: string) =>
+    apiRequest<{
+      access_token: string
+      id_usuario: number
+      nombre: string
+      usuario: string
+      rol: string
+    }>(
+      '/api/auth/auth0/login',
+      'POST',
+      { token: auth0Token },
+    ),
   login: (data: { usuario: string; contrasena: string }) =>
     apiRequest<{ access_token: string; id_usuario: number; nombre: string; usuario: string; rol: string }>(
       '/api/auth/login',
