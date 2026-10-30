@@ -8,7 +8,7 @@ export default defineConfig({
     react(),
     VitePWA({
       registerType: 'autoUpdate',
-      includeAssets: ['icono.svg'],
+      includeAssets: ['icono.svg', 'portada.webp'],
       manifest: {
         name: 'OdiseoPay',
         short_name: 'OdiseoPay',

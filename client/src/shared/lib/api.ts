@@ -31,35 +31,64 @@ async function apiRequest<T>(
   const payload = await response.json().catch(() => ({}))
 
   if (!response.ok) {
+    // El backend devuelve mensajes concretos (cuenta no vinculada, conflicto
+    // de vinculación, etc.). Priorizarlos evita ocultarlos tras un 401/403
+    // genérico.
+    if (typeof payload?.error === 'string' && payload.error.trim()) {
+      throw new Error(payload.error)
+    }
+    if (typeof payload?.message === 'string' && payload.message.trim()) {
+      throw new Error(payload.message)
+    }
     if (response.status === 401) {
       throw new Error('Tu sesión expiró. Inicia sesión nuevamente.')
     }
     if (response.status === 403) {
       throw new Error('No tienes permisos para realizar esta acción.')
     }
-    const message =
-      payload?.error ?? payload?.message ?? 'Ocurrió un error inesperado.'
-    throw new Error(message)
+    throw new Error('Ocurrió un error inesperado.')
   }
 
   return payload as T
 }
 
+export type AuthResponse = {
+  access_token: string
+  id_usuario: number
+  nombre: string
+  usuario: string
+  rol: string
+  auth0_sub?: string | null
+  auth0_provider?: string | null
+}
+
+export type LinkAuth0Response = {
+  auth0_sub: string
+  auth0_provider: string | null
+  message: string
+}
+
 export const api = {
-    auth0Login: (auth0Token: string) =>
-    apiRequest<{
-      access_token: string
-      id_usuario: number
-      nombre: string
-      usuario: string
-      rol: string
-    }>(
+  auth0Login: (auth0Token: string) =>
+    apiRequest<AuthResponse>(
       '/api/auth/auth0/login',
       'POST',
       { token: auth0Token },
     ),
+  linkAuth0: (token: string, auth0Token: string) =>
+    apiRequest<LinkAuth0Response>(
+      '/api/auth/auth0/vincular',
+      'POST',
+      { token, body: JSON.stringify({ auth0_token: auth0Token }) },
+    ),
+  unlinkAuth0: (token: string) =>
+    apiRequest<void>(
+      '/api/auth/auth0/vincular',
+      'DELETE',
+      { token },
+    ),
   login: (data: { usuario: string; contrasena: string }) =>
-    apiRequest<{ access_token: string; id_usuario: number; nombre: string; usuario: string; rol: string }>(
+    apiRequest<AuthResponse>(
       '/api/auth/login',
       'POST',
       { body: JSON.stringify(data) },

@@ -10,7 +10,7 @@ Desde la raíz del proyecto (en el caso de ejecutar en linux o WSL), ejecuta:
 ./server/iniciar_servidor.sh
 ```
 
-El script crea `.venv` si no existe, instala las dependencias y arranca la API.
+El script crea `.venv` si no existe, instala las dependencias, aplica las migraciones pendientes con Alembic y arranca la API.
 
 La API queda disponible en `http://127.0.0.1:5000`. También puede iniciarse con `flask --app src.main run --debug`.
 
@@ -18,15 +18,36 @@ El archivo `.env` debe contener las credenciales de la base de datos. Usa `.env.
 
 ## Base de datos y migraciones
 
-La base inicial se crea ejecutando `migrations/odiseopay.sql`. Los cambios posteriores se gestionan con Flask-Migrate:
+La base inicial se crea ejecutando `migrations/odiseopay.sql`. Los cambios posteriores se gestionan con Flask-Migrate/Alembic. El repositorio guarda el entorno de migraciones en `server/migrations/alembic/` y la configuración en `server/alembic.ini`.
+
+Desde `server/`:
 
 ```bash
-source venv/bin/activate
-flask --app src.main db migrate -m "descripcion del cambio"
-flask --app src.main db upgrade
+../.venv/bin/python -m flask --app src.main db upgrade
+../.venv/bin/python -m flask --app src.main db current
 ```
 
-La migración inicial crea `categorias`, `proveedores`, `clientes`, `usuarios`, `productos`, `inventario`, `compras`, `detalle_compra`, `ventas`, `detalle_venta` y `movimientos_inventario`.
+Para crear una migración después de cambiar un modelo:
+
+```bash
+../.venv/bin/python -m flask --app src.main db migrate -m "descripcion del cambio"
+../.venv/bin/python -m flask --app src.main db upgrade
+```
+
+También puedes usar Alembic directamente:
+
+```bash
+../.venv/bin/python -m alembic -c alembic.ini upgrade head
+../.venv/bin/python -m alembic -c alembic.ini current
+```
+
+`iniciar_servidor.sh` aplica automáticamente `alembic upgrade head` antes de arrancar. Para omitir ese paso:
+
+```bash
+ODISEOPAY_SKIP_MIGRATIONS=1 ./server/iniciar_servidor.sh
+```
+
+La migración inicial crea `categorias`, `proveedores`, `clientes`, `usuarios`, `productos`, `inventario`, `compras`, `detalle_compra`, `ventas`, `detalle_venta` y `movimientos_inventario`. La migración `c4f89f958055` agrega `usuarios.auth0_sub` y su restricción única.
 
 ## Convenciones generales
 
@@ -75,16 +96,102 @@ Respuesta `200`:
 ```json
 {
 	"access_token": "<jwt>",
+	"id_usuario": 3,
+	"nombre": "Administrador",
 	"usuario": "admin",
-	"rol": "Admin"
+	"rol": "Admin",
+	"auth0_sub": null,
+	"auth0_provider": null
 }
 ```
+
+`auth0_sub` indica la cuenta social vinculada (`google-oauth2|...` o `facebook|...`). Es `null` cuando el usuario solo tiene contraseña local.
 
 Enviar el token en todas las rutas protegidas:
 
 ```http
 Authorization: Bearer <jwt>
 ```
+
+### Login social con Auth0
+
+El frontend usa una aplicación de Auth0 de tipo **Single Page Application**. El flujo es:
+
+1. El usuario pulsa **Google** o **Facebook** en `/login`.
+2. Auth0 redirige de vuelta a `http://localhost:5173/login`.
+3. El frontend obtiene el access token y llama a `POST /api/auth/auth0/login`.
+4. El backend valida el token contra el JWKS del tenant, busca `usuarios.auth0_sub` y devuelve el JWT local con el rol de OdiseoPay.
+
+Si la cuenta social todavía no está vinculada, el backend responde `403` con un mensaje que indica iniciar sesión localmente y vincularla desde el menú lateral.
+
+Variables necesarias en `server/.env`:
+
+```env
+AUTH0_DOMAIN=dev-mjgxqjikayj2605h.us.auth0.com
+AUTH0_AUDIENCE=https://api.odiseopay.com
+```
+
+`AUTH0_AUDIENCE` es el **identifier** de la API creada en Auth0. No tiene que ser un dominio real ni resolver en DNS; es un identificador lógico. La API del proyecto sigue corriendo en `http://127.0.0.1:5000`.
+
+En el dashboard de Auth0, la SPA debe tener configurado:
+
+- Allowed Callback URLs: `http://localhost:5173/login`
+- Allowed Logout URLs: `http://localhost:5173/login`
+- Allowed Web Origins: `http://localhost:5173`
+- La API `https://api.odiseopay.com` autorizada para la SPA.
+- Las conexiones sociales Google y Facebook habilitadas para esa SPA.
+
+#### Vincular una cuenta social
+
+La vinculación se hace dentro de la aplicación, sin SQL manual:
+
+```http
+POST /api/auth/auth0/vincular
+Authorization: Bearer <jwt-local>
+Content-Type: application/json
+
+{
+	"auth0_token": "<access_token de Auth0>"
+}
+```
+
+Respuesta `200`:
+
+```json
+{
+	"auth0_sub": "google-oauth2|1234567890",
+	"auth0_provider": "Google",
+	"message": "Cuenta social vinculada correctamente."
+}
+```
+
+Reglas:
+
+- Cada usuario local puede tener **una** cuenta social vinculada.
+- Si el usuario ya tiene Google y envía un token de Facebook, el backend responde `409` y pide desvincular primero.
+- Si el `sub` ya pertenece a otro usuario, responde `409`.
+- Vincular la misma cuenta dos veces es idempotente (`200`).
+
+#### Desvincular una cuenta social
+
+```http
+DELETE /api/auth/auth0/vincular
+Authorization: Bearer <jwt-local>
+```
+
+Responde `204` si se eliminó el vínculo, o `200` con un mensaje si el usuario no tenía cuenta social.
+
+### Solución de problemas de Auth0
+
+| Síntoma | Causa probable | Solución |
+| --- | --- | --- |
+| `Firefox no puede conectarse al servidor undefined` | Faltan `VITE_AUTH0_DOMAIN` o `VITE_AUTH0_CLIENT_ID` | Crea `client/.env` desde `client/.env.example` y reinicia Vite |
+| `La cuenta de Auth0 no está vinculada` | El `sub` no existe en `usuarios.auth0_sub` | Inicia sesión local y usa **Vincular cuenta social** |
+| `Auth0 no está configurado en el servidor` | Faltan variables en `server/.env` | Agrega `AUTH0_DOMAIN` y `AUTH0_AUDIENCE` y reinicia Flask |
+| `Unknown column 'usuarios.auth0_sub'` | Falta aplicar la migración | Ejecuta `flask --app src.main db upgrade` |
+| `No se pudo validar la cuenta de Auth0` | Token vencido, audience incorrecta o problema de red con el JWKS | Revisa la configuración de la API y vuelve a iniciar sesión |
+| `Client ... is not authorized to access resource server` | La SPA no está autorizada para la API en Auth0 | En APIs → OdiseoPay API → Applications, autoriza la SPA |
+| `Callback URL mismatch` | La URL de callback no está autorizada | Agrega `http://localhost:5173/login` en la SPA |
 
 ## Permisos por rol
 

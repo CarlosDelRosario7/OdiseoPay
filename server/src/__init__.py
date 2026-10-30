@@ -1,8 +1,12 @@
+from pathlib import Path
+
 from flask import Flask, jsonify
 from flask_cors import CORS
 
 from .config import Config
 from .extensions import db, jwt, migrate
+
+MIGRATIONS_DIR = Path(__file__).resolve().parent.parent / "migrations" / "alembic"
 
 
 def create_app(config_class=Config):
@@ -11,7 +15,7 @@ def create_app(config_class=Config):
 
     db.init_app(app)
     jwt.init_app(app)
-    migrate.init_app(app, db)
+    migrate.init_app(app, db, directory=str(MIGRATIONS_DIR))
     CORS(app, resources={r"/api/*": {"origins": app.config["FRONTEND_ORIGINS"]}})
 
     from . import models
