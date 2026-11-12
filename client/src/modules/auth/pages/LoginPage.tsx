@@ -1,4 +1,4 @@
-import { type FormEvent, useEffect, useRef, useState } from 'react'
+ import { type FormEvent, useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth0 } from '@auth0/auth0-react'
 import {
@@ -104,12 +104,15 @@ export default function LoginPage() {
   const localToken = useAuthStore((state) => state.token)
   const setSocialAccount = useAuthStore((state) => state.setSocialAccount)
 
+  const [isRegisterMode, setIsRegisterMode] = useState(false)
   const [form, setForm] = useState({
+    nombre: '',
     usuario: '',
     contrasena: '',
   })
 
   const [error, setError] = useState('')
+  const [successMessage, setSuccessMessage] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [socialLoading, setSocialLoading] = useState<SocialProvider | null>(null)
   const [showPassword, setShowPassword] = useState(false)
@@ -126,8 +129,6 @@ export default function LoginPage() {
   }, [])
 
   useEffect(() => {
-    // La vinculación usa redirección en la misma pestaña. Si la página se
-    // carga dentro de una ventana emergente, no se procesa el login.
     if (window.opener) {
       return
     }
@@ -272,7 +273,7 @@ export default function LoginPage() {
   }, [auth0Error, navigate])
 
   const handleChange = (
-    field: 'usuario' | 'contrasena',
+    field: 'nombre' | 'usuario' | 'contrasena',
     value: string,
   ) => {
     setForm((prev) => ({
@@ -284,6 +285,51 @@ export default function LoginPage() {
   const handleSubmit = async (event: FormEvent) => {
     event.preventDefault()
     setError('')
+    setSuccessMessage('')
+
+    if (isRegisterMode) {
+      if (!form.nombre.trim() || !form.usuario.trim() || !form.contrasena.trim()) {
+        setError('Nombre, usuario y contraseña son requeridos para registrarse.')
+        return
+      }
+
+      if (form.contrasena.trim().length < 6) {
+        setError('La contraseña debe tener al menos 6 caracteres.')
+        return
+      }
+
+      try {
+        setIsSubmitting(true)
+        const baseUrl = (import.meta.env.VITE_API_URL || 'http://localhost:5000').replace(/\/$/, '')
+        const response = await fetch(`${baseUrl}/api/auth/registro`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            nombre: form.nombre.trim(),
+            usuario: form.usuario.trim(),
+            contrasena: form.contrasena,
+            rol: 'Vendedor',
+          }),
+        })
+        const payload = await response.json().catch(() => ({}))
+        if (!response.ok) {
+          throw new Error(payload.error || 'No se pudo completar el registro.')
+        }
+
+        setSuccessMessage(
+          `Cuenta "${payload.usuario}" creada con rol ${payload.rol}. Ya puedes iniciar sesión.`,
+        )
+        setIsRegisterMode(false)
+        setForm((prev) => ({ ...prev, nombre: '', contrasena: '' }))
+      } catch (err) {
+        setError(
+          err instanceof Error ? err.message : 'No se pudo registrar el usuario.',
+        )
+      } finally {
+        setIsSubmitting(false)
+      }
+      return
+    }
 
     if (!form.usuario.trim() || !form.contrasena.trim()) {
       setError('Usuario y contraseña son requeridos.')
@@ -347,6 +393,12 @@ export default function LoginPage() {
       )
       setSocialLoading(null)
     }
+  }
+
+  const toggleAuthMode = () => {
+    setError('')
+    setSuccessMessage('')
+    setIsRegisterMode((prev) => !prev)
   }
 
   const busy = isSubmitting || socialLoading !== null || isLoading
@@ -413,11 +465,31 @@ export default function LoginPage() {
             </div>
 
             <div className="auth-heading">
-              <h2>Bienvenido de nuevo</h2>
-              <p>Ingresa con tu cuenta para continuar.</p>
+              <h2>{isRegisterMode ? 'Crear cuenta' : 'Bienvenido de nuevo'}</h2>
+              <p>
+                {isRegisterMode
+                  ? 'Regístrate para acceder como vendedor.'
+                  : 'Ingresa con tu cuenta para continuar.'}
+              </p>
             </div>
 
             <form onSubmit={handleSubmit} className="auth-form">
+              {isRegisterMode ? (
+                <label>
+                  Nombre completo
+                  <input
+                    type="text"
+                    value={form.nombre}
+                    onChange={(event) =>
+                      handleChange('nombre', event.target.value)
+                    }
+                    placeholder="Ej. Eirick Bautista"
+                    autoComplete="name"
+                    disabled={busy}
+                  />
+                </label>
+              ) : null}
+
               <label>
                 Usuario
                 <input
@@ -442,7 +514,9 @@ export default function LoginPage() {
                       handleChange('contrasena', event.target.value)
                     }
                     placeholder="••••••••"
-                    autoComplete="current-password"
+                    autoComplete={
+                      isRegisterMode ? 'new-password' : 'current-password'
+                    }
                     disabled={busy}
                   />
 
@@ -473,6 +547,13 @@ export default function LoginPage() {
                 </p>
               ) : null}
 
+              {successMessage ? (
+                <p className="auth-hint" role="status">
+                  <ShieldCheck size={15} aria-hidden="true" />
+                  {successMessage}
+                </p>
+              ) : null}
+
               {auth0Error ? (
                 <p className="error-message" role="alert">
                   {describeAuth0LoginError(auth0Error.message)}
@@ -487,47 +568,64 @@ export default function LoginPage() {
                       alt=""
                       className="button-loader"
                     />
-                    Ingresando...
+                    {isRegisterMode ? 'Registrando...' : 'Ingresando...'}
                   </>
+                ) : isRegisterMode ? (
+                  'Registrarse'
                 ) : (
                   'Iniciar sesión'
                 )}
               </button>
+
+              <button
+                type="button"
+                className="social-button"
+                onClick={toggleAuthMode}
+                disabled={busy}
+              >
+                {isRegisterMode
+                  ? '¿Ya tienes cuenta? Inicia sesión'
+                  : '¿No tienes cuenta? Regístrate'}
+              </button>
             </form>
 
-            <div className="auth-divider">
-              <span>o continúa con</span>
-            </div>
+            {!isRegisterMode ? (
+              <>
+                <div className="auth-divider">
+                  <span>o continúa con</span>
+                </div>
 
-            <div className="auth-social">
-              <button
-                type="button"
-                className="social-button"
-                onClick={() => handleSocialLogin('google')}
-                disabled={busy}
-              >
-                <GoogleIcon />
-                <span>
-                  {socialLoading === 'google'
-                    ? 'Conectando...'
-                    : 'Google'}
-                </span>
-              </button>
+                <div className="auth-social">
+                  <button
+                    type="button"
+                    className="social-button"
+                    onClick={() => handleSocialLogin('google')}
+                    disabled={busy}
+                  >
+                    <GoogleIcon />
+                    <span>
+                      {socialLoading === 'google'
+                        ? 'Conectando...'
+                        : 'Google'}
+                    </span>
+                  </button>
 
-              <button
-                type="button"
-                className="social-button"
-                onClick={() => handleSocialLogin('facebook')}
-                disabled={busy}
-              >
-                <FacebookIcon />
-                <span>
-                  {socialLoading === 'facebook'
-                    ? 'Conectando...'
-                    : 'Facebook'}
-                </span>
-              </button>
-            </div>
+                  <button
+                    type="button"
+                    className="social-button"
+                    onClick={() => handleSocialLogin('facebook')}
+                    disabled={busy}
+                  >
+                    <FacebookIcon />
+                    <span>
+                      {socialLoading === 'facebook'
+                        ? 'Conectando...'
+                        : 'Facebook'}
+                    </span>
+                  </button>
+                </div>
+              </>
+            ) : null}
 
             <p className="auth-hint">
               <ShieldCheck size={15} aria-hidden="true" />
@@ -540,4 +638,5 @@ export default function LoginPage() {
       </section>
     </main>
   )
-}
+    }
+        
