@@ -4,6 +4,8 @@ from flask import jsonify
 from flask_jwt_extended import create_access_token, get_jwt, get_jwt_identity, jwt_required
 from werkzeug.security import check_password_hash, generate_password_hash
 
+from .security_log import log_security_event
+
 
 def hash_password(password):
     return generate_password_hash(password)
@@ -27,6 +29,13 @@ def roles_required(*roles):
         @jwt_required()
         def wrapper(*args, **kwargs):
             if get_jwt().get("rol") not in roles:
+                log_security_event(
+                    "authorization_denied",
+                    outcome="failure",
+                    user_id=get_jwt_identity(),
+                    rol=get_jwt().get("rol"),
+                    required_roles=list(roles),
+                )
                 return jsonify({"error": "No tienes permisos para esta operación"}), 403
             return function(*args, **kwargs)
         return wrapper

@@ -15,6 +15,7 @@ from ..utils.auth_utils import (
     current_user_id,
     verify_password,
 )
+from ..utils.security_log import log_security_event
 
 
 auth_blueprint = Blueprint(
@@ -90,9 +91,23 @@ def login():
         user.contrasena,
         data.get("contrasena", ""),
     ):
+        log_security_event(
+            "login_failed",
+            outcome="failure",
+            usuario=str(data.get("usuario"))[:80],
+            reason="invalid_credentials",
+        )
         return jsonify({
             "error": "Credenciales inválidas"
         }), 401
+
+    log_security_event(
+        "login_succeeded",
+        outcome="success",
+        user_id=user.id_usuario,
+        usuario=user.usuario,
+        rol=user.rol,
+    )
 
     return jsonify({
         "access_token": create_token(user),
@@ -105,6 +120,12 @@ def register():
     data = request.get_json(silent=True) or {}
 
     if data.get("rol") not in {"Admin", "Vendedor"}:
+        log_security_event(
+            "bootstrap_registration_rejected",
+            outcome="failure",
+            usuario=str(data.get("usuario"))[:80],
+            reason="invalid_role",
+        )
         return jsonify({
             "error": "El rol debe ser Admin o Vendedor"
         }), 422
@@ -117,11 +138,23 @@ def register():
     )
 
     if not has_users and data.get("rol") != "Admin":
+        log_security_event(
+            "bootstrap_registration_rejected",
+            outcome="failure",
+            usuario=str(data.get("usuario"))[:80],
+            reason="first_user_must_be_admin",
+        )
         return jsonify({
             "error": "El primer usuario debe ser Admin"
         }), 422
 
     if has_users:
+        log_security_event(
+            "bootstrap_registration_rejected",
+            outcome="failure",
+            usuario=str(data.get("usuario"))[:80],
+            reason="bootstrap_already_completed",
+        )
         return jsonify({
             "error": (
                 "Solo un administrador puede registrar usuarios"
@@ -129,6 +162,13 @@ def register():
         }), 401
 
     user = create_user(data)
+
+    log_security_event(
+        "bootstrap_admin_created",
+        outcome="success",
+        user_id=user.id_usuario,
+        usuario=user.usuario,
+    )
 
     return jsonify({
         "id_usuario": user.id_usuario
@@ -140,6 +180,11 @@ def auth0_login():
     token = _bearer_token()
 
     if not token:
+        log_security_event(
+            "auth0_login_failed",
+            outcome="failure",
+            reason="missing_bearer_token",
+        )
         return jsonify({
             "error": "Bearer token requerido"
         }), 401
@@ -162,6 +207,12 @@ def auth0_login():
         ).first()
 
         if user is None:
+            log_security_event(
+                "auth0_login_failed",
+                outcome="failure",
+                auth0_sub=auth0_sub,
+                reason="unlinked_account",
+            )
             return jsonify({
                 "error": (
                     "Esta cuenta social todavía no está vinculada a un "
@@ -170,12 +221,25 @@ def auth0_login():
                 )
             }), 403
 
+        log_security_event(
+            "auth0_login_succeeded",
+            outcome="success",
+            user_id=user.id_usuario,
+            auth0_sub=auth0_sub,
+            rol=user.rol,
+        )
+
         return jsonify({
             "access_token": create_token(user),
             **_serialize_user(user),
         }), 200
 
     except Exception as error:
+        log_security_event(
+            "auth0_login_failed",
+            outcome="failure",
+            reason=type(error).__name__,
+        )
         return _auth0_error_response(error)
 
 
@@ -189,6 +253,11 @@ def link_auth0_account():
     token = (data.get("auth0_token") or "").strip()
 
     if not token:
+        log_security_event(
+            "auth0_link_failed",
+            outcome="failure",
+            reason="missing_auth0_token",
+        )
         return jsonify({
             "error": "El token de Auth0 es requerido para vincular la cuenta."
         }), 422
@@ -208,6 +277,13 @@ def link_auth0_account():
             }), 401
 
         if user.auth0_sub == auth0_sub:
+            log_security_event(
+                "auth0_link_noop",
+                outcome="info",
+                user_id=user.id_usuario,
+                auth0_sub=auth0_sub,
+                reason="already_linked_to_same_account",
+            )
             return jsonify({
                 "auth0_sub": user.auth0_sub,
                 "auth0_provider": _auth0_provider(user.auth0_sub),
@@ -215,6 +291,13 @@ def link_auth0_account():
             }), 200
 
         if user.auth0_sub:
+            log_security_event(
+                "auth0_link_rejected",
+                outcome="failure",
+                user_id=user.id_usuario,
+                auth0_sub=auth0_sub,
+                reason="user_already_has_social_account",
+            )
             return jsonify({
                 "error": (
                     "Tu usuario ya tiene una cuenta social vinculada "
@@ -231,6 +314,13 @@ def link_auth0_account():
         ).first()
 
         if existing is not None:
+            log_security_event(
+                "auth0_link_rejected",
+                outcome="failure",
+                user_id=user.id_usuario,
+                auth0_sub=auth0_sub,
+                reason="social_account_in_use",
+            )
             return jsonify({
                 "error": (
                     "Esa cuenta social ya está vinculada a otro usuario "
@@ -241,6 +331,13 @@ def link_auth0_account():
         user.auth0_sub = auth0_sub
         db.session.commit()
 
+        log_security_event(
+            "auth0_link_succeeded",
+            outcome="success",
+            user_id=user.id_usuario,
+            auth0_sub=auth0_sub,
+        )
+
         return jsonify({
             "auth0_sub": user.auth0_sub,
             "auth0_provider": _auth0_provider(user.auth0_sub),
@@ -249,6 +346,12 @@ def link_auth0_account():
 
     except IntegrityError:
         db.session.rollback()
+        log_security_event(
+            "auth0_link_rejected",
+            outcome="failure",
+            user_id=user.id_usuario,
+            reason="integrity_error",
+        )
         return jsonify({
             "error": (
                 "Esa cuenta social ya está vinculada a otro usuario "
@@ -258,6 +361,12 @@ def link_auth0_account():
 
     except Exception as error:
         db.session.rollback()
+        log_security_event(
+            "auth0_link_failed",
+            outcome="failure",
+            user_id=user.id_usuario,
+            reason=type(error).__name__,
+        )
         return _auth0_error_response(error)
 
 
@@ -276,5 +385,11 @@ def unlink_auth0_account():
 
     user.auth0_sub = None
     db.session.commit()
+
+    log_security_event(
+        "auth0_unlink_succeeded",
+        outcome="success",
+        user_id=user.id_usuario,
+    )
 
     return "", 204

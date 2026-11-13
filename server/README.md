@@ -16,6 +16,14 @@ La API queda disponible en `http://127.0.0.1:5000`. También puede iniciarse con
 
 El archivo `.env` debe contener las credenciales de la base de datos. Usa `.env.example` como referencia. No publiques `.env` ni sus secretos.
 
+`JWT_SECRET_KEY` es obligatoria: el servidor no arranca si falta, tiene menos de 32 caracteres o conserva un valor de ejemplo. Genera una clave propia por entorno:
+
+```bash
+python -c "import secrets; print(secrets.token_hex(32))"
+```
+
+Los eventos de seguridad (inicios de sesión, rechazos 401/403 y errores internos) se registran como líneas JSON en `server/logs/security.log`, con rotación de 1 MB y tres respaldos. La ruta se puede cambiar con `SECURITY_LOG_DIR`. El modo depuración queda desactivado por defecto y solo se activa con `FLASK_DEBUG=1`.
+
 ## Base de datos y migraciones
 
 La base inicial se crea ejecutando `migrations/odiseopay.sql`. Los cambios posteriores se gestionan con Flask-Migrate/Alembic. El repositorio guarda el entorno de migraciones en `server/migrations/alembic/` y la configuración en `server/alembic.ini`.

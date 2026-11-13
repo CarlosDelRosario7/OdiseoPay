@@ -4,10 +4,13 @@ if __package__ in (None, ""):
 
 	sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
+import os
+
 from src import create_app
 
 app = create_app()
 
 
 if __name__ == "__main__":
-	app.run(debug=True)
+	debug = os.getenv("FLASK_DEBUG", "0").strip().lower() in {"1", "true", "yes"}
+	app.run(debug=debug)

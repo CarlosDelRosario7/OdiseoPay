@@ -7,6 +7,27 @@ from dotenv import load_dotenv
 BASE_DIR = Path(__file__).resolve().parent.parent
 load_dotenv(BASE_DIR / ".env")
 
+INSECURE_JWT_SECRETS = {
+    "dev-only-change-me",
+    "cambia-esta-clave-en-desarrollo",
+    "change-me",
+    "secret",
+}
+
+
+def validate_jwt_secret(secret: str | None) -> str:
+    """Exige un secreto JWT propio; evita arrancar con valores conocidos."""
+    value = (secret or "").strip()
+
+    if len(value) < 32 or value.lower() in INSECURE_JWT_SECRETS:
+        raise RuntimeError(
+            "JWT_SECRET_KEY no está configurada o es insegura. "
+            "Genera una clave con: python -c \"import secrets; print(secrets.token_hex(32))\" "
+            "y agrégala a server/.env antes de iniciar el servidor."
+        )
+
+    return value
+
 
 class Config:
     SQLALCHEMY_DATABASE_URI = (
@@ -15,7 +36,7 @@ class Config:
         f"/{os.getenv('DB_NAME', 'odiseopay')}"
     )
     SQLALCHEMY_TRACK_MODIFICATIONS = False
-    JWT_SECRET_KEY = os.getenv("JWT_SECRET_KEY", "dev-only-change-me")
+    JWT_SECRET_KEY = os.getenv("JWT_SECRET_KEY")
 
     AUTH0_DOMAIN = os.getenv("AUTH0_DOMAIN", "")
     AUTH0_AUDIENCE = os.getenv("AUTH0_AUDIENCE", "")
