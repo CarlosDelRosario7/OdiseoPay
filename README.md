@@ -16,7 +16,8 @@ El proyecto está siendo desarrollado como parte de un proyecto universitario po
 
 ### Backend
 
-* Por definir: Node.js o Python
+* Python
+* Flaskn
 
 ### Base de datos
 
@@ -64,3 +65,18 @@ Este proyecto se encuentra actualmente en fase de desarrollo. La arquitectura, t
 ## 📄 Licencia
 
 Por definir.
+
+## Procedimiento de revisión de código
+
+Como mejora del proceso de desarrollo de ODISEOPAY, se establece una revisión formal de los Pull Requests antes de integrarlos a main.
+
+1. El desarrollador crea una rama para sus cambios.
+2. Abre un Pull Request y describe las modificaciones.
+3. Adjunta las verificaciones o pruebas realizadas.
+4. El revisor designado comprueba los cambios.
+5. Si todo está correcto, registra su aprobación en GitHub.
+6. El cambio se fusiona después de recibir la aprobación.
+
+Responsable de seguimiento propuesto: Joel Barrientos Jiménez.
+
+Cuando Joel sea el autor del cambio, otro integrante deberá revisarlo.
