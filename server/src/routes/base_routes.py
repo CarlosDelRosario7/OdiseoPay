@@ -2,7 +2,7 @@ from flask import Blueprint, jsonify, request
 from sqlalchemy.exc import IntegrityError
 
 from ..extensions import db
-from ..utils.auth_utils import roles_required
+from ..utils.auth_utils import hash_password, roles_required
 from ..utils.serialization_utils import serialize_model
 
 
@@ -50,6 +50,11 @@ def crud_blueprint(name, url_prefix, model, service, write_roles=("Admin",), rea
         for key, value in data.items():
             if key in columns:
                 setattr(item, key, value)
+            # La columna se llama "contraseña" (con enie) pero la API usa
+            # "contrasena". Se traduce fuera del bucle de columnas.
+            elif key in ("contrasena", "contraseña"):
+                if value:
+                    item.contrasena = hash_password(value)
         db.session.commit()
         return jsonify(serialize_model(item, ("contraseña",)))
 

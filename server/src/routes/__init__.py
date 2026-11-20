@@ -9,6 +9,7 @@ from .inventario_routes import inventario_blueprint
 from .movimiento_inventario_routes import movimiento_blueprint
 from .producto_routes import producto_blueprint
 from .proveedor_routes import proveedor_blueprint
+from .reporte_routes import reporte_blueprint
 from .usuario_routes import usuario_blueprint
 from .venta_routes import venta_blueprint
 
@@ -26,6 +27,7 @@ def register_routes(app):
         movimiento_blueprint,
         producto_blueprint,
         proveedor_blueprint,
+        reporte_blueprint,
         usuario_blueprint,
         venta_blueprint,
     ):
