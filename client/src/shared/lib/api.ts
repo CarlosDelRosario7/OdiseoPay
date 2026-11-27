@@ -109,8 +109,8 @@ export const api = {
     apiRequest<ProductSummary>(`/api/productos/${id}`, 'PATCH', { token, body: JSON.stringify(data) }),
   deleteProduct: (token: string, id: number) =>
     apiRequest<void>(`/api/productos/${id}`, 'DELETE', { token }),
-  getInventory: (token: string) =>
-    apiRequest<ListResponse<InventoryItem>>('/api/inventario?page=1&per_page=100', 'GET', { token }),
+  getInventory: (token: string, page = 1) =>
+    apiRequest<ListResponse<InventoryItem>>(`/api/inventario?page=${page}&per_page=100`, 'GET', { token }),
   getLowStock: (token: string, page: number, threshold: number | null) => {
     const params = new URLSearchParams({ page: String(page), per_page: '20' })
     if (threshold !== null) params.set('umbral', String(threshold))
