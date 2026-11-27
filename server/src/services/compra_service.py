@@ -1,7 +1,7 @@
 from decimal import Decimal
 
 from ..extensions import db
-from ..models import Compra, DetalleCompra, Inventario, MovimientoInventario, Producto
+from ..models import Compra, DetalleCompra, Inventario, MovimientoInventario, Producto, Proveedor
 from .base_service import delete_record, get_or_404, list_records as paginate_records
 
 
@@ -14,6 +14,8 @@ def create_purchase(data, user_id):
 	details = data.get("detalles", [])
 	if not details or not data.get("id_proveedor"):
 		raise ValueError("Una compra requiere proveedor y al menos un detalle")
+	if db.session.get(Proveedor, data["id_proveedor"]) is None:
+		raise ValueError("Proveedor inexistente")
 	purchase = Compra(id_proveedor=data["id_proveedor"], id_usuario=user_id)
 	db.session.add(purchase)
 	for detail in details:
@@ -25,7 +27,11 @@ def create_purchase(data, user_id):
 		if product is None:
 			raise ValueError("Producto inexistente")
 		purchase.detalles.append(DetalleCompra(id_producto=product.id_producto, cantidad=quantity, precio=price))
-		inventory = product.inventario or Inventario(id_producto=product.id_producto, cantidad=0)
+		inventory = db.session.scalar(
+			db.select(Inventario).where(
+				Inventario.id_producto == product.id_producto
+			).with_for_update()
+		) or Inventario(id_producto=product.id_producto, cantidad=0)
 		inventory.cantidad += quantity
 		db.session.add(inventory)
 		db.session.add(MovimientoInventario(id_producto=product.id_producto, tipo="ENTRADA", cantidad=quantity, motivo="Compra", id_usuario=user_id))

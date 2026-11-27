@@ -109,10 +109,25 @@ export const api = {
     apiRequest<ProductSummary>(`/api/productos/${id}`, 'PATCH', { token, body: JSON.stringify(data) }),
   deleteProduct: (token: string, id: number) =>
     apiRequest<void>(`/api/productos/${id}`, 'DELETE', { token }),
-  getInventory: (token: string) =>
-    apiRequest<ListResponse<InventoryItem>>('/api/inventario?page=1&per_page=100', 'GET', { token }),
-  getSales: (token: string) =>
-    apiRequest<ListResponse<SaleSummary>>('/api/ventas?page=1&per_page=100', 'GET', { token }),
+  getInventory: (token: string, page = 1) =>
+    apiRequest<ListResponse<InventoryItem>>(`/api/inventario?page=${page}&per_page=100`, 'GET', { token }),
+  getLowStock: (token: string, page: number, threshold: number | null) => {
+    const params = new URLSearchParams({ page: String(page), per_page: '20' })
+    if (threshold !== null) params.set('umbral', String(threshold))
+    return apiRequest<LowStockResponse>(`/api/reportes/bajo-stock?${params}`, 'GET', { token })
+  },
+  getSales: (token: string, page = 1) =>
+    apiRequest<ListResponse<SaleSummary>>(`/api/ventas?page=${page}&per_page=100`, 'GET', { token }),
+  getPurchases: (token: string, page = 1) =>
+    apiRequest<ListResponse<PurchaseSummary>>(`/api/compras?page=${page}&per_page=100`, 'GET', { token }),
+  cancelSale: (token: string, id: number, motivo: string) =>
+    apiRequest<CancellationInfo>(`/api/ventas/${id}/anulacion`, 'POST', {
+      token, body: JSON.stringify({ motivo }),
+    }),
+  cancelPurchase: (token: string, id: number, motivo: string) =>
+    apiRequest<CancellationInfo>(`/api/compras/${id}/anulacion`, 'POST', {
+      token, body: JSON.stringify({ motivo }),
+    }),
   updateInventory: (token: string, id: number, data: Partial<InventoryInput>) =>
     apiRequest<InventoryItem>(`/api/inventario/${id}`, 'PATCH', { token, body: JSON.stringify(data) }),
   createClient: (token: string, data: ClientInput) =>
@@ -178,6 +193,13 @@ export type InventoryItem = {
 
 export type InventoryInput = Omit<InventoryItem, 'id_inventario'>
 
+export type LowStockItem = InventoryItem & {
+  nombre_producto: string | null
+  precio_venta: string | number | null
+  faltante: number
+}
+export type LowStockResponse = ListResponse<LowStockItem> & { umbral: number | null }
+
 export type ClientSummary = {
   id_cliente: number
   nombre: string
@@ -190,11 +212,18 @@ export type ClientInput = Omit<ClientSummary, 'id_cliente'> & { direccion?: stri
 
 export type UserSummary = { id_usuario: number; nombre: string; usuario: string; rol: string }
 export type UserInput = { nombre: string; usuario: string; contrasena?: string; rol: 'Admin' | 'Vendedor' }
-export type SaleSummary = { id_venta: number; fecha?: string; id_cliente: number; id_usuario: number }
+export type CancellationInfo = {
+  id_anulacion: number
+  id_usuario: number
+  usuario: string
+  fecha_utc: string
+  motivo: string
+}
+export type SaleSummary = { id_venta: number; fecha?: string; id_cliente: number; id_usuario: number; estado?: string; anulacion?: CancellationInfo | null }
 export type ProviderSummary = { id_proveedor: number; nombre: string; telefono?: string; correo?: string; direccion?: string }
 export type ProviderInput = Omit<ProviderSummary, 'id_proveedor'>
 export type CategorySummary = { id_categoria: number; nombre: string; descripcion?: string }
 export type CategoryInput = Omit<CategorySummary, 'id_categoria'>
 export type PurchaseDetailInput = { id_producto: number; cantidad: number; precio: string }
 export type PurchaseInput = { id_proveedor: number; detalles: PurchaseDetailInput[] }
-export type PurchaseSummary = { id_compra: number; fecha?: string; id_proveedor: number; id_usuario: number }
+export type PurchaseSummary = { id_compra: number; fecha?: string; id_proveedor: number; id_usuario: number; estado?: string; anulacion?: CancellationInfo | null }

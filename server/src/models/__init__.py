@@ -1,4 +1,5 @@
 from .categoria_model import Categoria
+from .anulacion_model import Anulacion
 from .cliente_model import Cliente
 from .compra_model import Compra
 from .detalle_compra_model import DetalleCompra
@@ -11,6 +12,6 @@ from .usuario_model import Usuario
 from .venta_model import Venta
 
 __all__ = [
-    "Categoria", "Cliente", "Compra", "DetalleCompra", "DetalleVenta",
+    "Anulacion", "Categoria", "Cliente", "Compra", "DetalleCompra", "DetalleVenta",
     "Inventario", "MovimientoInventario", "Producto", "Proveedor", "Usuario", "Venta",
 ]

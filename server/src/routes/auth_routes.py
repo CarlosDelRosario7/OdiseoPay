@@ -3,7 +3,7 @@ from flask import Blueprint, jsonify, request
 from flask_jwt_extended import jwt_required
 from sqlalchemy.exc import IntegrityError
 
-from ..extensions import db
+from ..extensions import db, limiter
 from ..models import Usuario
 from ..services.usuario_service import create_user
 from ..utils.auth0_utils import (
@@ -80,16 +80,22 @@ def _auth0_error_response(error: Exception):
 
 
 @auth_blueprint.post("/login")
+@limiter.limit("5 per minute", deduct_when=lambda response: response.status_code == 401)
 def login():
     data = request.get_json(silent=True) or {}
-
-    user = Usuario.query.filter_by(
-        usuario=data.get("usuario")
-    ).first()
+    if not isinstance(data, dict):
+        data = {}
+    username = data.get("usuario")
+    password = data.get("contrasena")
+    user = (
+        Usuario.query.filter_by(usuario=username).first()
+        if isinstance(username, str) and isinstance(password, str)
+        else None
+    )
 
     if user is None or not verify_password(
         user.contrasena,
-        data.get("contrasena", ""),
+        password,
     ):
         log_security_event(
             "login_failed",
@@ -160,6 +166,10 @@ def register():
                 "Solo un administrador puede registrar usuarios"
             )
         }), 401
+
+    if any(not isinstance(data.get(field), str) or not data[field].strip()
+           for field in ("nombre", "usuario", "contrasena")):
+        return jsonify({"error": "Nombre, usuario y contraseña son obligatorios"}), 422
 
     user = create_user(data)
 

@@ -24,6 +24,13 @@ python -c "import secrets; print(secrets.token_hex(32))"
 
 Los eventos de seguridad (inicios de sesión, rechazos 401/403 y errores internos) se registran como líneas JSON en `server/logs/security.log`, con rotación de 1 MB y tres respaldos. La ruta se puede cambiar con `SECURITY_LOG_DIR`. El modo depuración queda desactivado por defecto y solo se activa con `FLASK_DEBUG=1`.
 
+El login local limita a cinco intentos fallidos por minuto por dirección IP; al
+superar el límite devuelve HTTP 429. Por defecto usa memoria local, apropiada
+solo para una instancia académica: un reinicio borra el contador y varias
+instancias no lo comparten. Para un despliegue real, configurar
+`RATELIMIT_STORAGE_URI` con almacenamiento compartido y revisar la configuración
+del proxy; no confiar en cabeceras de IP sin configurar proxies de confianza.
+
 ## Base de datos y migraciones
 
 La base inicial se crea ejecutando `migrations/odiseopay.sql`. Los cambios posteriores se gestionan con Flask-Migrate/Alembic. El repositorio guarda el entorno de migraciones en `server/migrations/alembic/` y la configuración en `server/alembic.ini`.
@@ -55,7 +62,21 @@ También puedes usar Alembic directamente:
 ODISEOPAY_SKIP_MIGRATIONS=1 ./server/iniciar_servidor.sh
 ```
 
-La migración inicial crea `categorias`, `proveedores`, `clientes`, `usuarios`, `productos`, `inventario`, `compras`, `detalle_compra`, `ventas`, `detalle_venta` y `movimientos_inventario`. La migración `c4f89f958055` agrega `usuarios.auth0_sub` y su restricción única.
+La base inicial se crea con el SQL indicado arriba. La migración `c4f89f958055` agrega `usuarios.auth0_sub` y su restricción única. La migración `f4a7219e4a01` crea `anulaciones`; debe aplicarse antes de utilizar el código actualizado.
+
+## Anulaciones de ventas y compras
+
+Solo un administrador autenticado puede enviar `POST /api/ventas/<id>/anulacion`
+o `POST /api/compras/<id>/anulacion` con `{"motivo": "texto obligatorio"}`.
+El registro conserva la operación original, identidad del usuario, fecha UTC y
+motivo; la interfaz muestra la hora de Santo Domingo. La operación y el movimiento
+inverso de inventario se guardan en una sola transacción. Una compra no puede
+anularse si la reversión dejaría existencias negativas, ni una operación puede
+anularse dos veces. Las modificaciones y eliminaciones directas de operaciones y
+sus detalles permanecen bloqueadas para evitar inconsistencias.
+
+Los registros apoyan la auditoría, pero no prueban por sí solos quién controlaba
+una cuenta compartida ni impiden alteraciones de un administrador de base de datos.
 
 ## Convenciones generales
 

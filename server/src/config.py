@@ -37,6 +37,10 @@ class Config:
     )
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     JWT_SECRET_KEY = os.getenv("JWT_SECRET_KEY")
+    # Para una sola instancia académica; en despliegues múltiples se requiere
+    # un almacenamiento compartido compatible con Flask-Limiter.
+    RATELIMIT_STORAGE_URI = os.getenv("RATELIMIT_STORAGE_URI", "memory://")
+    RATELIMIT_HEADERS_ENABLED = True
 
     AUTH0_DOMAIN = os.getenv("AUTH0_DOMAIN", "")
     AUTH0_AUDIENCE = os.getenv("AUTH0_AUDIENCE", "")

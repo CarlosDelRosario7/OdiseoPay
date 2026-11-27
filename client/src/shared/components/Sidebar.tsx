@@ -35,7 +35,8 @@ const navItems = [
   { to: '/categorias', label: 'Categorías', icon: FolderTree },
   { to: '/clientes', label: 'Clientes', icon: Users },
   { to: '/inventario', label: 'Inventario', icon: Boxes },
-  { to: '/proveedores', label: 'Proveedores', icon: Truck },
+  { to: '/reportes/bajo-stock', label: 'Bajo stock', icon: ClipboardList },
+  { to: '/proveedores', label: 'Proveedores', icon: Truck, adminOnly: true },
   { to: '/usuarios', label: 'Usuarios', icon: ClipboardList },
   {
     to: '/compras',
@@ -43,6 +44,7 @@ const navItems = [
     icon: ShoppingCart,
     adminOnly: true,
   },
+  { to: '/compras/historial', label: 'Historial de compras', icon: ClipboardList, adminOnly: true },
 ]
 
 type SidebarProps = {
