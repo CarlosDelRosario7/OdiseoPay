@@ -135,3 +135,18 @@ def test_actualizacion_con_grafia_original_hashea_contrasena(client, admin_token
 def test_registro_inicial_sin_campos_obligatorios_devuelve_422(client):
     response = client.post("/api/auth/registro", json={"rol": "Admin"})
     assert response.status_code == 422
+
+
+def test_login_con_tipos_invalidos_no_devuelve_error_interno(client, admin_user):
+    for payload in ({"usuario": "admin", "contrasena": None}, {"usuario": [], "contrasena": "x"}, ["datos"]):
+        assert client.post("/api/auth/login", json=payload).status_code == 401
+
+
+def test_inventario_no_permite_reasignar_producto(client, admin_token):
+    producto = _crear_producto("NoReasignar", cantidad=10)
+    response = client.patch(
+        f"/api/inventario/{producto.inventario.id_inventario}",
+        headers=auth(admin_token), json={"id_producto": 999},
+    )
+    assert response.status_code == 422
+    assert producto.inventario.id_producto == producto.id_producto

@@ -83,14 +83,19 @@ def _auth0_error_response(error: Exception):
 @limiter.limit("5 per minute", deduct_when=lambda response: response.status_code == 401)
 def login():
     data = request.get_json(silent=True) or {}
-
-    user = Usuario.query.filter_by(
-        usuario=data.get("usuario")
-    ).first()
+    if not isinstance(data, dict):
+        data = {}
+    username = data.get("usuario")
+    password = data.get("contrasena")
+    user = (
+        Usuario.query.filter_by(usuario=username).first()
+        if isinstance(username, str) and isinstance(password, str)
+        else None
+    )
 
     if user is None or not verify_password(
         user.contrasena,
-        data.get("contrasena", ""),
+        password,
     ):
         log_security_event(
             "login_failed",

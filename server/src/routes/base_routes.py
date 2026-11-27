@@ -72,6 +72,8 @@ def crud_blueprint(name, url_prefix, model, service, write_roles=("Admin",), rea
         if name == "usuarios" and "rol" in data and data["rol"] not in {"Admin", "Vendedor"}:
             return jsonify({"error": "El rol debe ser Admin o Vendedor"}), 422
         if name == "inventario":
+            if set(data) - {"cantidad", "stock_minimo", "ubicacion"}:
+                return jsonify({"error": "Solo se permite ajustar cantidad, stock mínimo o ubicación"}), 422
             for field in ("cantidad", "stock_minimo"):
                 if field in data and (not isinstance(data[field], int) or isinstance(data[field], bool) or data[field] < 0):
                     return jsonify({"error": f"{field} debe ser un entero mayor o igual a 0"}), 422
