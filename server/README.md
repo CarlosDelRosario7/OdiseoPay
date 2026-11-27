@@ -31,6 +31,26 @@ instancias no lo comparten. Para un despliegue real, configurar
 `RATELIMIT_STORAGE_URI` con almacenamiento compartido y revisar la configuración
 del proxy; no confiar en cabeceras de IP sin configurar proxies de confianza.
 
+## Pruebas y cobertura
+
+Desde `server/`, instala las dependencias de desarrollo y ejecuta la suite:
+
+```bash
+../.venv/bin/python -m pip install -r requirements-dev.txt
+SECURITY_LOG_DIR=/tmp/opencode/odiseopay-test-logs \
+  ../.venv/bin/python -m pytest --cov=src --cov-report=term-missing \
+  --cov-report=html --cov-fail-under=100
+```
+
+Por defecto las pruebas usan SQLite en memoria; no acceden a la base de datos
+de desarrollo ni a los servicios reales de Auth0 o Gemini. Las pruebas de
+MariaDB se omiten si no se proporciona `TEST_MARIADB_URI`, y solo aceptan una
+base exclusiva cuyo nombre termine en `_e4_test`. Consulta
+`tests/test_mariadb_e4.py` antes de configurarla.
+
+El umbral mide **líneas ejecutadas del backend Python**, no cobertura del
+frontend, todas las ramas posibles ni ausencia de defectos.
+
 ## Base de datos y migraciones
 
 La base inicial se crea ejecutando `migrations/odiseopay.sql`. Los cambios posteriores se gestionan con Flask-Migrate/Alembic. El repositorio guarda el entorno de migraciones en `server/migrations/alembic/` y la configuración en `server/alembic.ini`.
