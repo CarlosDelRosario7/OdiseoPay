@@ -10,7 +10,7 @@ export default function DashboardPage() {
   useEffect(() => {
     if (!token) return
     void Promise.all([api.getSales(token), api.getProducts(token, 1, 100), user?.rol === 'Admin' ? api.getClientes(token) : Promise.resolve({ items: [] })])
-      .then(([sales, products, clients]) => setStats({ sales: sales.items.length, products: products.items.length, clients: clients.items.length }))
+      .then(([sales, products, clients]) => setStats({ sales: sales.items.filter((sale) => sale.estado !== 'ANULADA').length, products: products.items.length, clients: clients.items.length }))
       .catch((err) => setError(err instanceof Error ? err.message : 'No se pudieron cargar las métricas.'))
   }, [token, user?.rol])
 
@@ -26,7 +26,7 @@ export default function DashboardPage() {
 
       <section className="stats-grid">
         <article className="stat-card">
-          <span>Ventas del día</span>
+          <span>Ventas activas (primera página)</span>
           <strong>{stats.sales}</strong>
         </article>
         <article className="stat-card">

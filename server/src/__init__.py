@@ -4,7 +4,7 @@ from flask import Flask, jsonify
 from flask_cors import CORS
 
 from .config import Config, validate_jwt_secret
-from .extensions import db, jwt, migrate
+from .extensions import db, jwt, limiter, migrate
 from .utils.security_log import configure_security_logging, log_security_event
 
 MIGRATIONS_DIR = Path(__file__).resolve().parent.parent / "migrations" / "alembic"
@@ -22,6 +22,7 @@ def create_app(config_class=Config):
     db.init_app(app)
     jwt.init_app(app)
     migrate.init_app(app, db, directory=str(MIGRATIONS_DIR))
+    limiter.init_app(app)
     CORS(app, resources={r"/api/*": {"origins": app.config["FRONTEND_ORIGINS"]}})
 
     from . import models
@@ -63,6 +64,13 @@ def create_app(config_class=Config):
     @app.errorhandler(404)
     def not_found(error):
         return jsonify({"error": "Recurso no encontrado"}), 404
+
+    @app.errorhandler(429)
+    def too_many_requests(error):
+        response = error.get_response()
+        response.data = app.json.dumps({"error": "Demasiados intentos. Inténtalo de nuevo más tarde."})
+        response.content_type = "application/json"
+        return response
 
     @app.errorhandler(500)
     def internal_error(error):

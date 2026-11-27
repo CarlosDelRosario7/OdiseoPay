@@ -1,7 +1,7 @@
 from decimal import Decimal
 
 from ..extensions import db
-from ..models import DetalleVenta, Inventario, MovimientoInventario, Producto, Venta
+from ..models import Cliente, DetalleVenta, Inventario, MovimientoInventario, Producto, Venta
 from .base_service import delete_record, get_or_404, list_records as paginate_records
 
 
@@ -14,15 +14,25 @@ def create_sale(data, user_id):
 	details = data.get("detalles", [])
 	if not details or not data.get("id_cliente"):
 		raise ValueError("Una venta requiere cliente y al menos un detalle")
+	if db.session.get(Cliente, data["id_cliente"]) is None:
+		raise ValueError("Cliente inexistente")
 	sale = Venta(id_cliente=data["id_cliente"], id_usuario=user_id)
 	db.session.add(sale)
 	for detail in details:
 		quantity = int(detail["cantidad"])
-		price = Decimal(str(detail["precio"]))
 		product = db.session.get(Producto, detail["id_producto"])
-		inventory = product.inventario if product else None
-		if product is None or inventory is None or quantity <= 0 or price < 0:
+		inventory = db.session.scalar(
+			db.select(Inventario).where(
+				Inventario.id_producto == detail["id_producto"]
+			).with_for_update()
+		) if product else None
+		if product is None or inventory is None or quantity <= 0:
 			raise ValueError("Producto, cantidad, precio o inventario inválidos")
+		price = product.precio_venta
+		if "precio" in detail and Decimal(str(detail["precio"])) != price:
+			raise ValueError("El precio no coincide con el catálogo")
+		if price < 0:
+			raise ValueError("Precio de catálogo inválido")
 		if inventory.cantidad < quantity:
 			raise ValueError("Stock insuficiente")
 		sale.detalles.append(DetalleVenta(id_producto=product.id_producto, cantidad=quantity, precio=price))

@@ -101,7 +101,8 @@ def test_serialize_model_convierte_datetime_a_isoformat(app):
 def test_log_security_event_registra_en_el_log_del_proyecto(app, tmp_path, monkeypatch):
     """El evento queda registrado como una linea JSON valida con los campos enviados."""
     log_security_event("prueba_unit", outcome="ok", detalle="valor")
-    ruta_log = Path(__file__).resolve().parents[1] / "logs" / "security.log"
+    handler = next(h for h in configure_security_logging().handlers if isinstance(h, RotatingFileHandler))
+    ruta_log = Path(handler.baseFilename)
     assert ruta_log.exists()
     lineas = ruta_log.read_text(encoding="utf-8").strip().splitlines()
     registro = json.loads(lineas[-1])

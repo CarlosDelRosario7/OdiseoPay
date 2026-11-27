@@ -23,6 +23,7 @@ export default function SalesPage() {
   const [montoRecibido, setMontoRecibido] = useState('200')
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
+  const [submitting, setSubmitting] = useState(false)
   const [productSearch, setProductSearch] = useState('')
 
   const subtotal = items.reduce((sum, item) => sum + item.cantidad * item.precio, 0)
@@ -34,13 +35,14 @@ export default function SalesPage() {
   useEffect(() => {
     if (!token) return
     void api.getProducts(token, 1, 100).then((response) => setProducts(response.items)).catch((err) => setError(err instanceof Error ? err.message : 'No se pudieron cargar los productos.'))
-    if (role === 'Admin') void api.getClientes(token).then((response) => setClients(response.items)).catch(() => undefined)
+    void api.getClientes(token).then((response) => setClients(response.items)).catch((err) => setError(err instanceof Error ? err.message : 'No se pudieron cargar los clientes.'))
   }, [token, role])
 
   const handleCreateSale = async () => {
-    if (!token) return
+    if (!token || submitting) return
 
     try {
+      setSubmitting(true)
       setError('')
       setSuccess('')
 
@@ -54,8 +56,13 @@ export default function SalesPage() {
       })
 
       setSuccess('Venta registrada correctamente.')
+      setItems([])
+      setClienteId('')
+      setProducts((await api.getProducts(token, 1, 100)).items)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'No se pudo registrar la venta.')
+    } finally {
+      setSubmitting(false)
     }
   }
 
@@ -70,7 +77,7 @@ export default function SalesPage() {
 
       <section className="sale-layout">
         <div className="sale-panel">
-          <label>Cliente{role === 'Admin' ? <select required value={clienteId} onChange={(e) => setClienteId(e.target.value)}><option value="">Selecciona un cliente</option>{clients.map((client) => <option key={client.id_cliente} value={client.id_cliente}>{client.nombre} {client.apellido}</option>)}</select> : <input required type="number" min="1" placeholder="ID del cliente" value={clienteId} onChange={(e) => setClienteId(e.target.value)} />}</label>
+          <label>Cliente<select required value={clienteId} onChange={(e) => setClienteId(e.target.value)}><option value="">Selecciona un cliente</option>{clients.map((client) => <option key={client.id_cliente} value={client.id_cliente}>{client.nombre} {client.apellido}</option>)}</select></label>
 
           <div className="sale-items">
             {items.map((item, index) => (
@@ -95,16 +102,7 @@ export default function SalesPage() {
                   type="number"
                   step="0.01"
                   value={item.precio}
-                  onChange={(e) => {
-                    const next = Number(e.target.value)
-                    setItems((prev) =>
-                      prev.map((entry, idx) =>
-                        idx === index
-                          ? { ...entry, precio: Number.isNaN(next) ? 0 : next }
-                          : entry,
-                      ),
-                    )
-                  }}
+                  readOnly
                 />
                 <button type="button" className="icon-button remove-item" aria-label={`Quitar ${item.nombre}`} onClick={() => setItems((prev) => prev.filter((_, idx) => idx !== index))}><Trash2 size={18} /></button>
               </div>
@@ -143,7 +141,7 @@ export default function SalesPage() {
           {error ? <p className="error-message">{error}</p> : null}
           {success ? <p className="success-message">{success}</p> : null}
 
-          <button type="button" disabled={!items.length || !clienteId || cambio < 0} onClick={handleCreateSale}>Registrar venta</button>
+          <button type="button" disabled={submitting || !items.length || !clienteId || cambio < 0} onClick={handleCreateSale}>{submitting ? 'Registrando...' : 'Registrar venta'}</button>
         </aside>
       </section>
     </main>

@@ -21,6 +21,7 @@ from src.utils.auth_utils import hash_password  # noqa: E402
 
 class TestConfig(Config):
     TESTING = True
+    RATELIMIT_ENABLED = False
     SQLALCHEMY_DATABASE_URI = "sqlite:///:memory:"
     JWT_SECRET_KEY = "test-secret-key-for-tests-only-32chars"
     AUTH0_DOMAIN = "test-tenant.us.auth0.com"
@@ -36,6 +37,7 @@ def app():
         yield application
         db.session.remove()
         db.drop_all()
+        db.engine.dispose()
 
 
 @pytest.fixture()

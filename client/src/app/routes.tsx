@@ -10,7 +10,8 @@ import UsersPage from '../modules/users/pages/UsersPage'
 import ProvidersPage from '../modules/providers/pages/ProvidersPage'
 import CategoriesPage from '../modules/categories/pages/CategoriesPage'
 import PurchasesPage from '../modules/purchases/pages/PurchasesPage'
-import SalesHistoryPage from '../modules/sales/pages/SalesHistoryPage'
+import TransactionsHistoryPage from '../modules/transactions/pages/TransactionsHistoryPage'
+import LowStockPage from '../modules/reports/pages/LowStockPage'
 import AppShell from '../shared/components/AppShell'
 import ProtectedRoute from '../shared/components/ProtectedRoute'
 
@@ -28,10 +29,12 @@ export default function AppRoutes() {
       >
         <Route index element={<DashboardPage />} />
         <Route path="/ventas" element={<SalesPage />} />
-        <Route path="/ventas/historial" element={<SalesHistoryPage />} />
+        <Route path="/ventas/historial" element={<TransactionsHistoryPage kind="ventas" />} />
+        <Route path="/compras/historial" element={<ProtectedRoute roles={['Admin']}><TransactionsHistoryPage kind="compras" /></ProtectedRoute>} />
         <Route path="/productos" element={<ProductsPage />} />
         <Route path="/clientes" element={<CustomersPage />} />
         <Route path="/inventario" element={<InventoryPage />} />
+        <Route path="/reportes/bajo-stock" element={<LowStockPage />} />
         <Route path="/usuarios" element={<ProtectedRoute roles={['Admin']}><UsersPage /></ProtectedRoute>} />
         <Route path="/proveedores" element={<ProtectedRoute roles={['Admin']}><ProvidersPage /></ProtectedRoute>} />
         <Route path="/categorias" element={<CategoriesPage />} />
